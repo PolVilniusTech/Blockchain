@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+
+import datetime
+import hashlib
+import json
+
+class Blockchain:
+  def __init__(self):
+    self.chain = []
+    self.create_block(proof=1, previous_hash='0')
+
+  def create_block(self, proof, previous_hash):
+    block = {'message': '',
+             'id': len(self.chain) + 1,
+             'timestamp': str(datetime.datetime.now()),
+             'proof': proof,
+             'hash' : '',
+             'previous_hash': previous_hash}
+    block['hash'] = self.hash(block)
+    self.chain.append(block)
+    return block
+
+  def print_previous_block(self):
+    return self.chain[-1]
+
+  def proof_of_work(self, previous_proof):
+    new_proof = 1
+    check_proof = False
+    while check_proof is False:
+      hash_operation = hashlib.sha256(str(new_proof**2 - previous_proof**2).encode()).hexdigest()
+      if hash_operation[:5] == '00000':
+        check_proof = True
+      else:
+        new_proof += 1
+    return new_proof
+
+  def hash(self, block):
+    encoded_block = json.dumps(block, sort_keys=True).encode()
+    return hashlib.sha256(encoded_block).hexdigest()
+
+  def chain_valid(self, chain):
+    previous_block = chain[0]
+    block_index = 1
+
+    while block_index < len(chain):
+      block = chain[block_index]
+      if block['previous_hash'] != self.hash(previous_block):
+        return False
+      previous_proof = previous_block['proof']
+      proof = block['proof']
+      hash_operation = hashlib.sha256(str(proof**2 - previous_proof**2).encode()).hexdigest()
+      if hash_operation[:5] != '00000':
+        return False
+      previous_block = block
+      block_index +=1
+
+    return True
+
+  def test_mine_block(self):
+    previous_block = self.print_previous_block()
+    previous_proof = previous_block['proof']
+    proof = self.proof_of_work(previous_proof)
+    previous_hash = self.hash(previous_block)
+    block = self.create_block(proof, previous_hash)
+
+    response = {'message': '',
+                'id': block['id'],
+                'timestamp': block['timestamp'],
+                'proof': block['proof'],
+                'hash' : '',
+                'previous_hash': block['previous_hash']}
+
+    b_1 = block['hash']
+    a_1 = self.hash(response)
+    response['hash'] = block['hash']
+    if(b_1 == a_1):
+      print(f'MESSAGE AS BLOCK IS MINED.')
+      response['message'] = 'A block is mined.'
+    else:
+      print(f'MESSAGE AS BLOCK FAILED TO BE MINED.')
+      response['message'] = 'A block failed to be mined.'
+    return print(f'{response}')
+
+  def test_display_chain(self):
+    response = {'chain': self.chain,
+                'length': len(self.chain)}
+    return print(f'{response}')
+
+  def test_valid(self):
+    valid = self.chain_valid(self.chain)
+    if valid:
+      response = {'message': 'The Blockchain is valid.'}
+    else:
+      response = {'message': 'The Blockchain is not valid.'}
+    return print(f'{response}')
+
+blockchain = Blockchain()
+
+print(f'MINING.')
+blockchain.test_mine_block()
+print(f'CHAINVIEW.')
+blockchain.test_display_chain()
+print(f'MINING.')
+blockchain.test_mine_block()
+print(f'CHAINVIEW.')
+blockchain.test_display_chain()
+print(f'VALIDATION.')
+blockchain.test_valid()
