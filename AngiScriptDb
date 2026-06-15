@@ -7,25 +7,25 @@ import json
 
 class Database:
   def __init__(self):
-    self.conn=None
-    self.user="test"
-    self.password="password"
-    self.host="localhost"
-    self.database="test"
+    self._conn=None
+    self.__user="test"
+    self.__password="password"
+    self.__host="localhost"
+    self.__database="test"
 
   def connect(self):
-    self.conn = mariadb.connect(
-        user=self.user,
-        password=self.password,
-        host=self.host,
-        database=self.database)
-    return self.conn.cursor(binary=True)
+    self._conn = mariadb.connect(
+        user=self.__user,
+        password=self.__password,
+        host=self.__host,
+        database=self.__database)
+    return self._conn.cursor(binary=True)
 
   def commit(self):
-    return self.conn.commit()
+    return self._conn.commit()
 
   def disconnect(self):
-    return self.conn.close()
+    return self._conn.close()
 
 
 class Blockchain:
