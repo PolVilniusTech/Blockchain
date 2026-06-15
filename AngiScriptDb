@@ -13,7 +13,7 @@ class Database:
     self.__host="localhost"
     self.__database="test"
 
-  def connect(self):
+  def _connect(self):
     self._conn = mariadb.connect(
         user=self.__user,
         password=self.__password,
@@ -21,10 +21,10 @@ class Database:
         database=self.__database)
     return self._conn.cursor(binary=True)
 
-  def commit(self):
+  def _commit(self):
     return self._conn.commit()
 
-  def disconnect(self):
+  def _disconnect(self):
     return self._conn.close()
 
 
@@ -32,7 +32,7 @@ class Blockchain:
   def __init__(self):
     self.__chain = []
     self.__db = Database()
-    cur = self.__db.connect()
+    cur = self.__db._connect()
     cur.execute("SELECT `id` FROM `blockchain`;")
     rows = cur.fetchall()
     if len(rows) == 0:
@@ -40,6 +40,7 @@ class Blockchain:
     else:
         self.__restore_blocks()
         del rows
+    cur.close()
 
   def __create_block(self, proof, previous_hash, message):
     block = {'message': message,
@@ -49,18 +50,18 @@ class Blockchain:
              'hash' : '',
              'previous_hash': previous_hash}
     block['hash'] = self.__hash(block)
-    cur = self.__db.connect()
+    cur = self.__db._connect()
     try:
         cur.execute("INSERT INTO `blockchain` (`id`,`message`,`timestamp`,`proof`,`hash`,`previous_hash`) VALUES (?,?,?,?,?,?);", (block['id'], block['message'], block['timestamp'], block['proof'], block['hash'], block['previous_hash'],))
-        self.__db.commit()
+        self.__db._commit()
     except mariadb.Error as e:
         print(f"Error: {e}")
-    self.__db.disconnect()
+    self.__db._disconnect()
     self.__chain.append(block)
     return block
 
   def __restore_blocks(self):
-    cur = self.__db.connect()
+    cur = self.__db._connect()
     cur.execute("SELECT `id`,`message`,`timestamp`,`proof`,`hash`,`previous_hash` FROM `blockchain`;")
     rows = cur.fetchall()
     for row in rows:
@@ -73,7 +74,7 @@ class Blockchain:
         self.__chain.append(block)
         del block
     del row, rows
-    self.__db.disconnect()
+    self.__db._disconnect()
 
   def __print_previous_block(self):
     return self.__chain[-1]
